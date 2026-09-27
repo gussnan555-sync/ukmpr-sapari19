@@ -6,7 +6,7 @@ import {
   deleteToken,
   checkSupabaseTokensTable
 } from '@/lib/supabase';
-import { createExpiryDate } from '@/lib/time-utils';
+import { createExpiryDate, parseWITADateTime } from '@/lib/time-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     let expiresAt: string;
 
     if (customExpiresAt) {
-      expiresAt = new Date(customExpiresAt).toISOString();
+      expiresAt = parseWITADateTime(customExpiresAt);
     } else {
       expiresAt = createExpiryDate(duration);
     }

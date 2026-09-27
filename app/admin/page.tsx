@@ -3,7 +3,14 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { TokenRecord, AccessLogRecord } from '@/lib/supabase';
-import { formatWITA, getRemainingTime } from '@/lib/time-utils';
+import {
+  formatWITA,
+  getRemainingTime,
+  getWITAParts,
+  createExpiryDate,
+  createWITAExpiryFromTime,
+  parseWITADateTime
+} from '@/lib/time-utils';
 import {
   KeyRound,
   Users,
@@ -50,6 +57,8 @@ export default function AdminPage() {
   // Token Form State
   const [newTokenCode, setNewTokenCode] = useState('');
   const [newTokenTitle, setNewTokenTitle] = useState('Presensi Sesi Seminar');
+  const [expiryMode, setExpiryMode] = useState<'target_time' | 'duration' | 'custom_datetime'>('target_time');
+  const [targetTime, setTargetTime] = useState('13:00');
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [customDateTime, setCustomDateTime] = useState('');
   const [isCreatingToken, setIsCreatingToken] = useState(false);
@@ -168,11 +177,23 @@ export default function AdminPage() {
     setNewTokenCode(`SAPARI-${code}`);
   };
 
+  const getSelectedExpiryIso = () => {
+    if (expiryMode === 'target_time') {
+      return createWITAExpiryFromTime(targetTime);
+    } else if (expiryMode === 'custom_datetime') {
+      return parseWITADateTime(customDateTime || new Date().toISOString());
+    } else {
+      return createExpiryDate(durationMinutes);
+    }
+  };
+
   const handleCreateToken = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsCreatingToken(true);
 
     try {
+      const expiryIso = getSelectedExpiryIso();
+
       const res = await fetch('/api/tokens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -180,7 +201,7 @@ export default function AdminPage() {
           token: newTokenCode,
           title: newTokenTitle,
           durationMinutes,
-          customExpiresAt: customDateTime || undefined
+          customExpiresAt: expiryIso
         })
       });
 
@@ -494,44 +515,170 @@ export default function AdminPage() {
                   />
                 </div>
 
-                {/* Duration Presets */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-2">
-                    Durasi Masa Berlaku (Waktu WITA)
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[15, 30, 45, 60, 120, 1440].map(mins => (
+                {/* Pengaturan Masa Berlaku (WITA) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-200">
+                      Masa Berlaku Token (WITA)
+                    </label>
+                    <div className="flex p-0.5 rounded-lg bg-slate-900 border border-slate-700 text-[11px]">
                       <button
-                        key={mins}
                         type="button"
-                        onClick={() => {
-                          setDurationMinutes(mins);
-                          setCustomDateTime('');
-                        }}
-                        className={`py-2 px-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                          durationMinutes === mins && !customDateTime
-                            ? 'bg-amber-500 text-slate-950 border-amber-400'
-                            : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:border-slate-500'
+                        onClick={() => setExpiryMode('target_time')}
+                        className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                          expiryMode === 'target_time'
+                            ? 'bg-amber-500 text-slate-950 font-bold'
+                            : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        {mins >= 60 ? `${mins / 60} Jam` : `${mins} Menit`}
+                        Jam Selesai
                       </button>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => setExpiryMode('duration')}
+                        className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                          expiryMode === 'duration'
+                            ? 'bg-amber-500 text-slate-950 font-bold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        Durasi Menit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExpiryMode('custom_datetime')}
+                        className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                          expiryMode === 'custom_datetime'
+                            ? 'bg-amber-500 text-slate-950 font-bold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        Tanggal Lain
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Mode 1: Jam Selesai Hari Ini */}
+                  {expiryMode === 'target_time' && (
+                    <div className="space-y-3 p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-300 font-medium">Berakhir Hari Ini Pukul:</span>
+                        <input
+                          type="time"
+                          value={targetTime}
+                          onChange={e => setTargetTime(e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-slate-950 border border-amber-500/50 text-amber-300 font-mono font-bold text-base focus:border-amber-400 outline-none"
+                        />
+                        <span className="text-xs font-bold text-amber-400 px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20">
+                          WITA
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[11px] text-slate-400 block mb-1.5 font-medium">
+                          Pilihan Cepat Jam Selesai:
+                        </span>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '16:00'].map(t => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => setTargetTime(t)}
+                              className={`py-1.5 px-2 rounded-lg text-xs font-mono font-semibold transition border cursor-pointer ${
+                                targetTime === t
+                                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold shadow-sm shadow-amber-500/30'
+                                  : 'bg-slate-950 text-slate-300 border-slate-700 hover:border-amber-500/50 hover:text-white'
+                              }`}
+                            >
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mode 2: Durasi Menit Cepat */}
+                  {expiryMode === 'duration' && (
+                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                      <span className="text-[11px] text-slate-400 block">Pilih durasi aktif dari sekarang:</span>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { label: '15 Menit', val: 15 },
+                          { label: '30 Menit', val: 30 },
+                          { label: '45 Menit', val: 45 },
+                          { label: '1 Jam', val: 60 },
+                          { label: '2 Jam', val: 120 },
+                          { label: '3 Jam', val: 180 }
+                        ].map(item => (
+                          <button
+                            key={item.val}
+                            type="button"
+                            onClick={() => setDurationMinutes(item.val)}
+                            className={`py-2 px-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                              durationMinutes === item.val
+                                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm shadow-amber-500/30'
+                                : 'bg-slate-950 text-slate-300 border-slate-700 hover:border-slate-500'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mode 3: Tanggal & Jam Lain */}
+                  {expiryMode === 'custom_datetime' && (
+                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+                      <label className="text-[11px] text-slate-400 block">Pilih tanggal dan jam spesifik (WITA):</label>
+                      <input
+                        type="datetime-local"
+                        value={customDateTime}
+                        onChange={e => setCustomDateTime(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-amber-500 outline-none"
+                      />
+                    </div>
+                  )}
                 </div>
 
-                {/* Custom Expiry DateTime (Optional) */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                    Atau Atur Tanggal & Jam Berakhir Spesifik (Opsional)
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={customDateTime}
-                    onChange={e => setCustomDateTime(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:border-amber-500 outline-none"
-                  />
-                </div>
+                {/* LIVE PREVIEW KONFIRMASI WAKTU */}
+                {(() => {
+                  const expiryIso = getSelectedExpiryIso();
+                  const remaining = getRemainingTime(expiryIso);
+                  const formatted = formatWITA(expiryIso);
+
+                  return (
+                    <div
+                      className={`p-3.5 rounded-xl border flex items-start gap-2.5 transition ${
+                        remaining.isExpired
+                          ? 'bg-rose-950/40 border-rose-500/50 text-rose-200'
+                          : 'bg-amber-500/10 border-amber-500/30 text-amber-200'
+                      }`}
+                    >
+                      <Clock
+                        className={`w-4 h-4 mt-0.5 shrink-0 ${
+                          remaining.isExpired ? 'text-rose-400' : 'text-amber-400'
+                        }`}
+                      />
+                      <div className="text-xs space-y-1">
+                        <span className="text-slate-400 text-[11px] block">Konfirmasi Waktu Berakhir:</span>
+                        <div className="font-bold text-white text-sm tracking-wide">{formatted}</div>
+                        <div>
+                          {remaining.isExpired ? (
+                            <span className="text-rose-400 font-semibold text-[11px] flex items-center gap-1">
+                              ⚠️ Jam ini sudah lewat dari waktu sekarang!
+                            </span>
+                          ) : (
+                            <span className="text-amber-400 font-medium text-[11px]">
+                              Aktif selama: <strong>{remaining.formatted}</strong> dari sekarang
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <button
                   type="submit"
