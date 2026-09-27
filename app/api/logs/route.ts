@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getRecentAccessLogs, clearAllAccessLogs } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const logs = await getRecentAccessLogs();

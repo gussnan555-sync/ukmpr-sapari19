@@ -225,7 +225,8 @@ values
     ('0881038162155', '0881038162155', 'I Putu Restu Adi Nugraha', 'Universitas Hindu Negeri I Gusti Bagus Sugriwa Denpasar', 'Sastra Agama dan Pendidikan Bahasa Bali', 'https://drive.google.com/open?id=1uop3E4qhrQm1kQLPs8V8jiBnt_49JIdH'),
     ('081238567967', '081238567967', 'I Wayan Parwita', 'Universitas Hindu Negeri I Gusti Bagus Sugriwa Denpasar', 'S1 Sastra Agama dan Pendidikan Bahasa Bali', 'https://drive.google.com/open?id=1dXEDNF2f2GGbqfdwG5KcL1N7q3xouWSr'),
     ('082314715319', '082314715319', 'Ni Wayan Wahyuni', 'UHN I GUSTI BAGUS SUGRIWA DENPASAR', 'S1 Pendidikan Bahasa Inggris', 'https://drive.google.com/open?id=1K8OTx04Lxihek4hJrTu3f_klY6OT60Fh'),
-    ('0895373990099', '0895373990099', 'Ida Ayu Windya Utami Puteri', 'Uhn I Gusti Bagus Sugriwa Denpasar', 'Fakultas Dharma Acarya prodi pendidikan bahasa Inggris', 'https://drive.google.com/open?id=1e_Sk10quvDcYAhOXD8sy3058nUCAt39H')
+    ('0895373990099', '0895373990099', 'Ida Ayu Windya Utami Puteri', 'Uhn I Gusti Bagus Sugriwa Denpasar', 'Fakultas Dharma Acarya prodi pendidikan bahasa Inggris', 'https://drive.google.com/open?id=1e_Sk10quvDcYAhOXD8sy3058nUCAt39H'),
+    ('085119456944', '085119456944', 'Gusnan', 'UHN I Gusti Bagus Sugriwa Denpasar', 'Informatika', '-')
 on conflict (norm_phone) do update set
     name = excluded.name,
     raw_phone = excluded.raw_phone,

@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { INITIAL_PARTICIPANTS } from '@/lib/initial-participants';
+import { getDbParticipants } from '@/lib/supabase';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const search = (searchParams.get('q') || '').toLowerCase().trim();
 
-    let results = INITIAL_PARTICIPANTS;
+    const allParticipants = await getDbParticipants();
+    let results = allParticipants;
     if (search) {
       results = results.filter(
         p =>
@@ -20,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      total: INITIAL_PARTICIPANTS.length,
+      total: allParticipants.length,
       filteredCount: results.length,
       participants: results
     });

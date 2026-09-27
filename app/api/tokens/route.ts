@@ -8,6 +8,8 @@ import {
 } from '@/lib/supabase';
 import { createExpiryDate } from '@/lib/time-utils';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const status = await checkSupabaseTokensTable();

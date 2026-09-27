@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { Participant, INITIAL_PARTICIPANTS, normalizePhoneNumber, findParticipantByPhone } from '@/lib/initial-participants';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pmhsrkboqnxwcczaxajq.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_uDl2rQQAduKBQInOUvh32Q_as1aPLnu';
@@ -202,4 +203,67 @@ export async function clearAllAccessLogs(): Promise<boolean> {
     // ignore
   }
   return true;
+}
+
+/**
+ * Fetch all participants from Supabase, or fallback to INITIAL_PARTICIPANTS
+ */
+export async function getDbParticipants(): Promise<Participant[]> {
+  try {
+    const { data, error } = await supabase
+      .from('participants')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      return data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        institution: item.institution || '-',
+        major: item.major || '-',
+        rawPhone: item.raw_phone || item.norm_phone,
+        normPhone: item.norm_phone,
+        proofUrl: item.proof_url || undefined,
+        timestamp: item.created_at || ''
+      }));
+    }
+  } catch (err) {
+    console.error('Error fetching participants from Supabase:', err);
+  }
+
+  return INITIAL_PARTICIPANTS;
+}
+
+/**
+ * Find a participant by phone number in Supabase, falling back to INITIAL_PARTICIPANTS
+ */
+export async function findParticipantInDbOrFallback(rawPhone: string): Promise<Participant | undefined> {
+  const normPhone = normalizePhoneNumber(rawPhone);
+  if (!normPhone) return undefined;
+
+  try {
+    const { data, error } = await supabase
+      .from('participants')
+      .select('*')
+      .or(`norm_phone.eq.${normPhone},raw_phone.eq.${rawPhone}`)
+      .limit(1);
+
+    if (!error && data && data.length > 0) {
+      const item = data[0];
+      return {
+        id: item.id,
+        name: item.name,
+        institution: item.institution || '-',
+        major: item.major || '-',
+        rawPhone: item.raw_phone || item.norm_phone,
+        normPhone: item.norm_phone,
+        proofUrl: item.proof_url || undefined,
+        timestamp: item.created_at || ''
+      };
+    }
+  } catch (err) {
+    console.error('Error querying participant in Supabase:', err);
+  }
+
+  return findParticipantByPhone(rawPhone);
 }

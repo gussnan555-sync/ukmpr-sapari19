@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findParticipantByPhone, normalizePhoneNumber } from '@/lib/initial-participants';
-import { getAllTokens, recordAccessLog } from '@/lib/supabase';
+import { normalizePhoneNumber } from '@/lib/initial-participants';
+import { getAllTokens, recordAccessLog, findParticipantInDbOrFallback } from '@/lib/supabase';
 import { isTokenExpired } from '@/lib/time-utils';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,8 +21,8 @@ export async function POST(request: NextRequest) {
 
     const normPhone = normalizePhoneNumber(rawPhone);
 
-    // 1. Verify Phone Number
-    const participant = findParticipantByPhone(rawPhone);
+    // 1. Verify Phone Number (from Supabase DB with fallback)
+    const participant = await findParticipantInDbOrFallback(rawPhone);
     if (!participant) {
       await recordAccessLog({
         token: rawToken,

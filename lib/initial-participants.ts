@@ -1490,6 +1490,16 @@ export const INITIAL_PARTICIPANTS: Participant[] = [
     "rawPhone": "0895373990099",
     "normPhone": "0895373990099",
     "proofUrl": "https://drive.google.com/open?id=1e_Sk10quvDcYAhOXD8sy3058nUCAt39H"
+  },
+  {
+    "id": 149,
+    "timestamp": "27/09/2026 11:15:00",
+    "name": "Gusnan",
+    "institution": "UHN I Gusti Bagus Sugriwa Denpasar",
+    "major": "Informatika",
+    "rawPhone": "085119456944",
+    "normPhone": "085119456944",
+    "proofUrl": "-"
   }
 ];
 
