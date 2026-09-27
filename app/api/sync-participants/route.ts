@@ -4,14 +4,21 @@ import { INITIAL_PARTICIPANTS } from '@/lib/initial-participants';
 
 export async function POST() {
   try {
-    const payload = INITIAL_PARTICIPANTS.map(p => ({
-      norm_phone: p.normPhone,
-      raw_phone: p.rawPhone,
-      name: p.name,
-      institution: p.institution,
-      major: p.major,
-      proof_url: p.proofUrl || null
-    }));
+    // Deduplicate by norm_phone to avoid Postgres batch duplicate constraint error
+    const phoneMap = new Map();
+    for (const p of INITIAL_PARTICIPANTS) {
+      if (p.normPhone) {
+        phoneMap.set(p.normPhone, {
+          norm_phone: p.normPhone,
+          raw_phone: p.rawPhone,
+          name: p.name,
+          institution: p.institution,
+          major: p.major,
+          proof_url: p.proofUrl || null
+        });
+      }
+    }
+    const payload = Array.from(phoneMap.values());
 
     // Upsert in batches of 50
     const chunkSize = 50;
