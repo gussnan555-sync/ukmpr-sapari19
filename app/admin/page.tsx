@@ -235,7 +235,7 @@ export default function AdminPage() {
 
   const handleSyncToSupabase = async () => {
     setIsSyncing(true);
-    setSyncStatus('Sedang mensinkronkan 148 peserta ke Supabase...');
+    setSyncStatus('Sedang mensinkronkan peserta ke Supabase...');
 
     try {
       const res = await fetch('/api/sync-participants', { method: 'POST' });
@@ -380,8 +380,8 @@ export default function AdminPage() {
               <span className="text-xs font-medium">Total Peserta CSV</span>
               <Users className="w-4 h-4 text-emerald-400" />
             </div>
-            <div className="text-2xl font-bold text-white">{participants.length || 148}</div>
-            <span className="text-[11px] text-slate-400">Terdaftar dari Formulir</span>
+            <div className="text-2xl font-bold text-white">{participants.length}</div>
+            <span className="text-[11px] text-slate-400">Nomor WhatsApp Terdaftar</span>
           </div>
 
           <div className="glass-panel rounded-2xl p-4 border border-slate-800">
@@ -426,7 +426,7 @@ export default function AdminPage() {
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>Daftar Peserta (148)</span>
+            <span>Daftar Peserta ({participants.length})</span>
           </button>
 
           <button
@@ -675,7 +675,7 @@ export default function AdminPage() {
           <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-white">Database Peserta Terdaftar (148 Peserta)</h2>
+                <h2 className="text-lg font-bold text-white">Database Peserta Terdaftar ({participants.length} Peserta)</h2>
                 <p className="text-xs text-slate-400">
                   Data otomatis dimuat dari file pendaftaran CSV seminar E-SAPARI.
                 </p>
